@@ -5,6 +5,7 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const bcryptjs = require('bcryptjs');
 
 const mongoDB =
   'mongodb+srv://admin_authBasics:fjnm2WGSXuD!6UV@cluster0.4gfeokp.mongodb.net/?retryWrites=true&w=majority';
@@ -69,14 +70,19 @@ app.get('/', (req, res) => res.render('index'));
 app.get('/sign-up', (req, res) => res.render('sign-up-form'));
 
 app.post('/sign-up', (req, res, next) => {
-  const user = new User({
-    username: req.body.username,
-    password: req.body.password,
-  }).save((err) => {
+  bcryptjs.hash(req.body.password, 10, (err, hashedPassword) => {
     if (err) {
-      return next(err);
+      console.log(err);
     }
-    res.redirect('/');
+    const user = new User({
+      username: req.body.username,
+      password: hashedPassword,
+    }).save((err) => {
+      if (err) {
+        return next(err);
+      }
+      res.redirect('/');
+    });
   });
 });
 
