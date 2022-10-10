@@ -18,7 +18,7 @@ db.on('error', console.error.bind(console, 'mongo conecction error'));
 const User = mongoose.model(
   'User',
   new Schema({
-    userName: { type: String, required: true },
+    username: { type: String, required: true },
     password: { type: String, required: true },
   })
 );
@@ -33,8 +33,8 @@ app.use(passport.session());
 app.use(express.urlencoded({ extended: false }));
 
 passport.use(
-  new LocalStrategy((userName, password, done) => {
-    User.findOne({ userName: userName }, (err, user) => {
+  new LocalStrategy((username, password, done) => {
+    User.findOne({ username: username }, (err, user) => {
       if (err) {
         return done(err);
       }
@@ -59,12 +59,18 @@ passport.deserializeUser(function (id, done) {
   });
 });
 
+app.use(function (req, res, next) {
+  res.locals.currentUser = req.user;
+  next();
+});
+
 app.get('/', (req, res) => res.render('index'));
+
 app.get('/sign-up', (req, res) => res.render('sign-up-form'));
 
 app.post('/sign-up', (req, res, next) => {
   const user = new User({
-    userName: req.body.userName,
+    username: req.body.username,
     password: req.body.password,
   }).save((err) => {
     if (err) {
@@ -73,5 +79,22 @@ app.post('/sign-up', (req, res, next) => {
     res.redirect('/');
   });
 });
+
+app.get('/log-out', (req, res, next) => {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+    res.redirect('/');
+  });
+});
+
+app.post(
+  '/log-in',
+  passport.authenticate('local', {
+    successRedirect: '/',
+    failureRedirect: '/',
+  })
+);
 
 app.listen(3000, () => console.log('App listening on port 3000!'));
